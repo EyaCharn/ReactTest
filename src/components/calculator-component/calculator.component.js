@@ -3,7 +3,7 @@ import {useState} from "react";
 
 export const CalculatorComponent = () => {
     const [barns, setBarns] = useState(1);
-    const [res, setRes] = useState(0);
+    const [res, ] = useState(0);
     const [barnsTemp, setBarnsTemp] = useState([1]);
     const [desiredTemp, setDesiredTEmp] = useState([1]);
 
