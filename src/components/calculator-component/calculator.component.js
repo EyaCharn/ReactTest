@@ -3,9 +3,10 @@ import {useState} from "react";
 
 export const CalculatorComponent = () => {
     const [barns, setBarns] = useState(1);
-    const [res, ] = useState(0);
+    const [res, setRes] = useState(0);
     const [barnsTemp, setBarnsTemp] = useState([1]);
-    const [desiredTemp, setDesiredTEmp] = useState([1]);
+    const [preferredTemp, setPreferredTEmp] = useState([1]);
+    const [difference, setDifference] = useState([0]);
 
     const handleBarnsChange = (val) => {
         val.preventDefault();
@@ -13,13 +14,16 @@ export const CalculatorComponent = () => {
         setBarns(value);
 
         const currentTempInit = [];
-        const desiredTempInit = [];
+        const preferredTempInit = [];
+        const differenceInit = [];
         for (let i = 0; i < value; i++) {
             currentTempInit.push(barnsTemp[i] !== undefined ? barnsTemp[i] : 0);
-            desiredTempInit.push(desiredTemp[i] !== undefined ? desiredTemp[i] : 0);
+            preferredTempInit.push(preferredTemp[i] !== undefined ? preferredTemp[i] : 0);
+            differenceInit.push(0);
         }
         setBarnsTemp(currentTempInit);
-        setDesiredTEmp(desiredTempInit);
+        setPreferredTEmp(preferredTempInit);
+        setDifference(differenceInit);
     }
 
     const handleBarnCurrentTempChange = (val, index) => {
@@ -28,32 +32,60 @@ export const CalculatorComponent = () => {
 
         const newBarnsCurrentTemp = [...barnsTemp];
         newBarnsCurrentTemp[index] = value;
-        setBarnsTemp(newBarnsCurrentTemp)
+        setBarnsTemp(newBarnsCurrentTemp);
+
+        const newDifference = [...difference];
+        newDifference[index] = preferredTemp[index] - value;
+        setDifference(newDifference);
     }
 
-    const handleBarnDesiredTempChange = (val, index) => {
+    const handleBarnPreferredTempChange = (val, index) => {
         val.preventDefault();
         const value = +val.target.value;
 
-        const newBarnsDesiredTemp = [...desiredTemp];
-        newBarnsDesiredTemp[index] = value;
-        setDesiredTEmp(newBarnsDesiredTemp)
+        const newBarnsPreferredTemp = [...preferredTemp];
+        newBarnsPreferredTemp[index] = value;
+        setPreferredTEmp(newBarnsPreferredTemp);
+
+        const newDifference = [...difference];
+        newDifference[index] = value - barnsTemp[index];
+        setDifference(newDifference);
     }
 
     const calculateTemp = () => {
-        const doneBarns = [];
+        let diffCopy = [...difference];
+        let iterations = 0;
 
-        const checkDoneBarns = () => {
-            barnsTemp.forEach((val1, index) => {
-                desiredTemp.forEach((val2, index2) => {
-                    if (val2 === val1) {
-                        doneBarns.push(index2);
-                    }
-                });
-            })
-        };
+        while (diffCopy.length) {
+            const lastDiff = diffCopy.length - 1;
+            if (diffCopy[lastDiff] === 0) {
+                diffCopy.splice(lastDiff, 1);
+                continue;
+            }
 
-        checkDoneBarns();
+            const isPositive = diffCopy[lastDiff] > 0;
+            let tChange = 1;
+
+            while (tChange < diffCopy.length) {
+                if (diffCopy[lastDiff - tChange] === 0) {
+                    break;
+                }
+
+                if ((diffCopy[lastDiff - tChange] > 0) !== isPositive) {
+                    break;
+                }
+
+                tChange++;
+            }
+
+            iterations++;
+
+            for (let i = 0; i < tChange; i++) {
+                diffCopy[lastDiff - i] = diffCopy[lastDiff - i] > 0 ? diffCopy[lastDiff - i] - 1 : diffCopy[lastDiff - i] + 1;
+            }
+        }
+
+        setRes(iterations);
     }
 
     return (
@@ -61,31 +93,37 @@ export const CalculatorComponent = () => {
             <h1>Jhon's barns temperature</h1>
             <hr/>
             <div className={'calculator-form'}>
-                <label htmlFor="barnsNumber">How many barns ?: </label>
-                <input id={'barnsNumber'} name={'barnsNumber'} value={barns} min={1} onChange={handleBarnsChange} placeholder={'Please enter number of barns ex: 5...'} type="number"/>
-                <h2>What's the current temperature? : </h2>
+                <h2>How many barns? :</h2>
+
+                <label htmlFor="barnsNumber">Banrs number: </label>
+                <input id={'barnsNumber'} name={'barnsNumber'} value={barns} min={1} className={'barns-number-input'} onChange={handleBarnsChange}
+                       placeholder={'Please enter number of barns ex: 5...'} type="number"/>
+
+                <h2>What's the preferred temperature? : </h2>
                 <div className={'barns-temperature'}>
                     {
-                        barnsTemp.map((barnTemp, index) => (
+                        preferredTemp.map((barnTemp, index) => (
                             <div className={'temp-input'} key={index}>
-                                <label htmlFor={'temp-of-barn-' + index}>{'Barn ' + (index + 1) + ':' } </label>
-                                <input id={'temp-of-barn-' + index} name={'temp-of-barn-' + index} value={barnTemp} onChange={(value) => {
-                                    handleBarnCurrentTempChange(value, index);
-                                }} placeholder={'ex: 6'} type="number"/>
+                                <label htmlFor={'temp-of-barn-' + index}>{'Barn ' + (index + 1) + ':'} </label>
+                                <input id={'temp-of-barn-' + index} name={'temp-of-barn-' + index} value={barnTemp}
+                                       onChange={(value) => {
+                                           handleBarnPreferredTempChange(value, index);
+                                       }} placeholder={'ex: 6'} type="number"/>
                             </div>
                         ))
                     }
                 </div>
 
-                <h2>What's the desired temperature? : </h2>
+                <h2>What's the current temperature? : </h2>
                 <div className={'barns-temperature'}>
                     {
-                        desiredTemp.map((barnTemp, index) => (
+                        barnsTemp.map((barnTemp, index) => (
                             <div className={'temp-input'} key={index}>
-                                <label htmlFor={'temp-of-barn-' + index}>{'Barn ' + (index + 1) + ':' } </label>
-                                <input id={'temp-of-barn-' + index} name={'temp-of-barn-' + index} value={barnTemp} onChange={(value) => {
-                                    handleBarnDesiredTempChange(value, index);
-                                }} placeholder={'ex: 6'} type="number"/>
+                                <label htmlFor={'temp-of-barn-' + index}>{'Barn ' + (index + 1) + ':'} </label>
+                                <input id={'temp-of-barn-' + index} name={'temp-of-barn-' + index} value={barnTemp}
+                                       onChange={(value) => {
+                                           handleBarnCurrentTempChange(value, index);
+                                       }} placeholder={'ex: 6'} type="number"/>
                             </div>
                         ))
                     }
@@ -96,7 +134,6 @@ export const CalculatorComponent = () => {
                 <h2>Iterations number: </h2>
                 <h1>{res}</h1>
             </div>
-
         </div>
     )
 }
